@@ -1,0 +1,25 @@
+name: tutur
+description: "Tutur, asisten suara berbahasa Indonesia untuk tunanetra: tahan layar, bicara, dengarkan jawabannya."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  speech_to_text: ^7.5.0
+  flutter_tts: ^4.0.2
+  geolocator: ^14.0.3
+  http: ^1.2.2
+  audioplayers: ^6.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
