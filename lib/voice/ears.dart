@@ -4,8 +4,6 @@ import 'package:speech_to_text/speech_to_text.dart';
 
 import '../core/problem.dart';
 
-import 'package:speech_to_text/speech_recognition_error.dart';
-
 /// Merekam selama layar ditahan. [finish] dipanggil saat jari dilepas.
 class Ears {
   final SpeechToText _stt = SpeechToText();
@@ -14,7 +12,8 @@ class Ears {
   Problem? _engineProblem;
   Completer<String>? _final;
 
-  Future<void> begin() async {
+  /// [onLevel] menerima volume suara mentah dari mesin pengenal (kira-kira -2 sampai 10 di Android).
+  Future<void> begin({void Function(double level)? onLevel}) async {
     _words = '';
     _engineProblem = null;
     _final = Completer<String>();
@@ -32,6 +31,7 @@ class Ears {
         partialResults: true,
         cancelOnError: false,
       ),
+      onSoundLevelChange: onLevel,
       onResult: (r) {
         _words = r.recognizedWords;
         final done = _final;
@@ -65,8 +65,8 @@ class Ears {
     await _stt.cancel();
   }
 
-  void _onEngineError(SpeechRecognitionError e) {
-    final msg = e.errorMsg;
+  void _onEngineError(dynamic e) {
+    final msg = (e.errorMsg ?? '').toString();
     if (msg == 'error_permission') {
       _engineProblem = Problem.micDenied;
     } else if (msg.startsWith('error_network') || msg == 'error_server') {
