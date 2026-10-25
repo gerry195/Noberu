@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tutur/intent/intent_parser.dart';
+import 'package:noberu/intent/intent_parser.dart';
 
 void main() {
   const parser = IntentParser();
