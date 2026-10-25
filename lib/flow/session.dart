@@ -26,7 +26,7 @@ class Session extends ChangeNotifier {
   static const _doubleTapWindow = Duration(milliseconds: 500);
 
   static const welcome =
-      'Tutur siap. Tahan layar lalu bicara, lepas untuk mengirim. '
+      'Noberu siap. Tahan layar lalu bicara, lepas untuk mengirim. '
       'Ketuk dua kali untuk mengulang jawaban.';
   static const _usage =
       'Tahan layar lalu bicara. Lepas untuk mengirim. '
@@ -37,6 +37,9 @@ class Session extends ChangeNotifier {
   final Cues _cues;
   final Answerer _answerer;
   final IntentParser _parser = const IntentParser();
+
+  /// Volume suara 0..1 saat merekam, dipakai animasi gelombang.
+  final ValueNotifier<double> level = ValueNotifier(0);
 
   Phase phase = Phase.idle;
   String heard = '';
@@ -52,6 +55,10 @@ class Session extends ChangeNotifier {
   Timer? _holdTimer;
   Timer? _hintTimer;
   bool _disposed = false;
+
+  void _onLevel(double raw) {
+    level.value = ((raw + 2) / 12).clamp(0.0, 1.0).toDouble();
+  }
 
   void _emit(Phase p) {
     phase = p;
@@ -126,7 +133,7 @@ class Session extends ChangeNotifier {
     await _cues.recordingStarts();
     if (gen != _gen) return;
     try {
-      await _ears.begin();
+      await _ears.begin(onLevel: _onLevel);
     } catch (e) {
       if (gen == _gen) await _fail(e, gen);
       return;
@@ -142,6 +149,7 @@ class Session extends ChangeNotifier {
   Future<void> _endCapture(int gen) async {
     _capturing = false;
     _micOpen = false;
+    level.value = 0;
     _emit(Phase.thinking);
     try {
       final text = await _ears.finish();
@@ -170,6 +178,7 @@ class Session extends ChangeNotifier {
     _gen++;
     _capturing = false;
     _micOpen = false;
+    level.value = 0;
     await _ears.abort();
     _emit(Phase.idle);
   }
@@ -209,6 +218,7 @@ class Session extends ChangeNotifier {
     _ears.abort();
     _speaker.stop();
     _cues.dispose();
+    level.dispose();
     super.dispose();
   }
 }
