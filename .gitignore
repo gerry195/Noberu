@@ -46,3 +46,5 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+hs_err_pid*.log
+replay_pid*.log
