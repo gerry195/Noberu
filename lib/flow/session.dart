@@ -43,8 +43,8 @@ class Session extends ChangeNotifier {
 
   Phase phase = Phase.idle;
   String heard = '';
-  String headline = '';
-  String detail = '';
+  Answer? answer;
+  Problem? problem;
 
   String? _lastSpoken;
   int _gen = 0;
@@ -127,6 +127,8 @@ class Session extends ChangeNotifier {
     _micOpen = false;
     _released = false;
     heard = '';
+    answer = null;
+    problem = null;
     await _speaker.stop();
     _emit(Phase.listening);
 
@@ -161,13 +163,12 @@ class Session extends ChangeNotifier {
       final intent = _parser.parse(text, DateTime.now());
       if (intent == null) throw const ProblemException(Problem.notUnderstood);
 
-      final answer = await _answerer.reply(intent);
+      final result = await _answerer.reply(intent);
       if (gen != _gen) return;
-      headline = answer.headline;
-      detail = answer.detail;
-      _lastSpoken = answer.spoken;
+      answer = result;
+      _lastSpoken = result.spoken;
       _emit(Phase.speaking);
-      await _say(answer.spoken, keepScreen: true);
+      await _say(result.spoken, keepScreen: true);
       if (gen == _gen) _emit(Phase.idle);
     } catch (e) {
       if (gen == _gen) await _fail(e, gen);
@@ -187,9 +188,10 @@ class Session extends ChangeNotifier {
     if (gen != _gen) return;
     _capturing = false;
     _micOpen = false;
+    level.value = 0;
     final p = classify(error);
-    headline = p.message;
-    detail = p.hint;
+    problem = p;
+    answer = null;
     _lastSpoken = '${p.message}. ${p.hint}.';
     _cues.failed();
     _emit(Phase.problem);
@@ -201,8 +203,8 @@ class Session extends ChangeNotifier {
     try {
       await _speaker.say(text);
     } catch (_) {
-      headline = Problem.ttsFailed.message;
-      detail = Problem.ttsFailed.hint;
+      problem = Problem.ttsFailed;
+      answer = null;
       _emit(Phase.problem);
       return;
     }

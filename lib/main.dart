@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'app/home_page.dart';
+import 'app/splash_page.dart';
 import 'app/theme.dart';
 
 void main() {
@@ -9,9 +9,9 @@ void main() {
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
+    statusBarIconBrightness: Brightness.dark,
     systemNavigationBarColor: Palette.ground,
-    systemNavigationBarIconBrightness: Brightness.light,
+    systemNavigationBarIconBrightness: Brightness.dark,
   ));
   runApp(const NoberuApp());
 }
@@ -25,7 +25,7 @@ class NoberuApp extends StatelessWidget {
       title: 'Noberu',
       debugShowCheckedModeBanner: false,
       theme: noberuTheme(),
-      home: const HomePage(),
+      home: const SplashPage(),
     );
   }
 }

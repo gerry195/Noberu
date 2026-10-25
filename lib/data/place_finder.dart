@@ -25,6 +25,12 @@ class Address {
   /// Nama wilayah paling kecil yang dikenal, untuk kalimat cuaca.
   String? get area => quarter ?? district ?? city;
 
+  /// Alamat tanpa nama jalan, untuk baris kedua kartu lokasi.
+  String get withoutRoad => [quarter, district, city, region]
+      .whereType<String>()
+      .where((s) => s.isNotEmpty)
+      .join(', ');
+
   String get spoken => [road, quarter, district, city, region]
       .whereType<String>()
       .where((s) => s.isNotEmpty)

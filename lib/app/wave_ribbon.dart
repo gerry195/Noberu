@@ -7,8 +7,9 @@ import 'package:flutter/scheduler.dart';
 import '../flow/session.dart';
 import 'theme.dart';
 
-/// Pita gelombang berlapis. Tinggi pita mengikuti volume suara saat merekam;
-/// saat siap ia menjadi garis redup, saat mencari ia bergulir pelan.
+/// Pita gelombang berlapis. Tinggi pita mengikuti volume suara saat merekam
+/// dan bergulir pelan saat mencari. Warna turun dari cokelat tua di depan ke
+/// krem di belakang.
 class WaveRibbon extends StatefulWidget {
   const WaveRibbon({super.key, required this.phase, required this.level});
 
@@ -39,7 +40,8 @@ class _WaveRibbonState extends State<WaveRibbon>
   }
 
   void _onTick(Duration elapsed) {
-    final dt = ((elapsed - _last).inMicroseconds / 1e6).clamp(0.0, 0.05).toDouble();
+    final dt =
+        ((elapsed - _last).inMicroseconds / 1e6).clamp(0.0, 0.05).toDouble();
     _last = elapsed;
 
     final double target = switch (widget.phase) {
@@ -87,22 +89,16 @@ class _RibbonPainter extends CustomPainter {
     final cy = size.height / 2;
     final spread = size.height * 0.34 * e;
     final amp = size.height * 0.30 * e;
-    final breathe = 0.5 + 0.5 * math.sin(m.t * 1.6);
-    final double presence = 0.32 +
-        0.12 * breathe * (1 - e).clamp(0.0, 1.0).toDouble() +
-        0.68 * math.min(1.0, e * 2);
     final steps = math.max(24, (size.width / 6).ceil());
 
     // Lapisan paling belakang digambar dulu supaya yang depan menimpanya.
     for (var i = _layers - 1; i >= 0; i--) {
       final d = i / (_layers - 1);
       final color = Color.lerp(
-        Palette.signal,
-        Palette.signalDeep,
-        math.pow(d, 0.85).toDouble(),
-      )!
-          .withValues(
-              alpha: ((1 - 0.5 * d) * presence).clamp(0.0, 1.0).toDouble());
+        Palette.ink,
+        Palette.cream,
+        math.pow(d, 0.8).toDouble(),
+      )!;
 
       final path = Path();
       for (var s = 0; s <= steps; s++) {
@@ -124,7 +120,7 @@ class _RibbonPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round
-          ..strokeWidth = 2.4 - 1.3 * d
+          ..strokeWidth = 2.8 - 1.4 * d
           ..color = color,
       );
     }

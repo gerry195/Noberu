@@ -1,19 +1,70 @@
 import '../data/forecast.dart';
 import '../data/place_finder.dart';
+import '../data/weather_glyph.dart';
 import '../intent/intent_parser.dart';
 
+enum Visual { none, weather, calendar, clock, pin }
+
+class WeatherCard {
+  const WeatherCard({
+    required this.place,
+    required this.when,
+    required this.temp,
+    required this.description,
+    required this.glyph,
+    required this.high,
+    required this.low,
+    this.humidity,
+    this.windKmh,
+    this.rainPct,
+    this.note,
+  });
+
+  final String place;
+  final String when;
+  final int temp;
+  final String description;
+  final WeatherGlyph glyph;
+  final int high;
+  final int low;
+  final int? humidity;
+  final int? windKmh;
+  final int? rainPct;
+  final String? note;
+}
+
 class Answer {
-  const Answer({required this.spoken, required this.headline, this.detail = ''});
+  const Answer({
+    required this.spoken,
+    required this.headline,
+    this.detail = '',
+    this.visual = Visual.none,
+    this.weather,
+    this.dayNumber = 1,
+    this.month = '',
+    this.hour = 0,
+    this.minute = 0,
+  });
 
   final String spoken;
   final String headline;
   final String detail;
+  final Visual visual;
+  final WeatherCard? weather;
+  final int dayNumber;
+  final String month;
+  final int hour;
+  final int minute;
 }
 
 const _dayNames = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 const _monthNames = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+const _monthShort = [
+  'JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN',
+  'JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES',
 ];
 
 String dayName(DateTime d) => _dayNames[d.weekday - 1];
@@ -70,11 +121,12 @@ class Answerer {
 
     if (intent.topic == Topic.day) {
       return Answer(
-        spoken: rel != null
-            ? '$rel hari $name.'
-            : '$long jatuh pada hari $name.',
+        spoken: rel != null ? '$rel hari $name.' : '$long jatuh pada hari $name.',
         headline: name,
-        detail: rel == null ? long : '$rel, $long',
+        detail: rel == null ? long : '$rel · $long',
+        visual: Visual.calendar,
+        dayNumber: day.day,
+        month: _monthShort[day.month - 1],
       );
     }
     return Answer(
@@ -82,7 +134,10 @@ class Answerer {
           ? '$rel hari $name, tanggal $long.'
           : '$long jatuh pada hari $name.',
       headline: long,
-      detail: rel == null ? name : '$rel, $name',
+      detail: rel == null ? name : '$rel · $name',
+      visual: Visual.calendar,
+      dayNumber: day.day,
+      month: _monthShort[day.month - 1],
     );
   }
 
@@ -90,12 +145,13 @@ class Answerer {
     final n = _clock();
     final h = n.hour;
     final m = n.minute;
-    final spoken =
-        m == 0 ? 'Pukul $h tepat.' : 'Pukul $h lewat $m menit.';
     return Answer(
-      spoken: spoken,
+      spoken: m == 0 ? 'Pukul $h tepat.' : 'Pukul $h lewat $m menit.',
       headline: '${h.toString().padLeft(2, '0')}.${m.toString().padLeft(2, '0')}',
       detail: '${dayName(n)}, ${fullDate(n)}',
+      visual: Visual.clock,
+      hour: h,
+      minute: m,
     );
   }
 
@@ -104,19 +160,21 @@ class Answerer {
     if (name != null) {
       final spot = await _places.find(name);
       final parts = (spot.label ?? name).split(', ');
+      final where = parts.take(4).join(', ');
       return Answer(
-        spoken: '$name berada di ${parts.take(4).join(', ')}.',
+        spoken: '$name berada di $where.',
         headline: _title(name),
-        detail: parts.take(4).join(', '),
+        detail: where,
+        visual: Visual.pin,
       );
     }
     final spot = await _places.here();
     final a = await _places.describe(spot);
-    final where = a.spoken;
     return Answer(
-      spoken: 'Anda berada di $where.',
+      spoken: 'Anda berada di ${a.spoken}.',
       headline: a.road ?? a.area ?? 'Posisi Anda',
-      detail: where,
+      detail: a.road == null ? '' : a.withoutRoad,
+      visual: Visual.pin,
     );
   }
 
@@ -140,36 +198,51 @@ class Answerer {
 
     final w = await _forecast.forDay(spot.lat, spot.lon, day, _today);
     final offset = _offset(day);
-    final when = _relative(offset)?.toLowerCase() ?? fullDate(day);
+    final rel = _relative(offset);
+    final when = rel?.toLowerCase() ?? fullDate(day);
     final at = area == null ? '' : ' di $area';
     final sentences = <String>[];
 
     switch (w.basis) {
       case Basis.typical:
-        sentences.add(
-            'Prakiraan untuk ${fullDate(day)}$at belum tersedia. '
+        sentences.add('Prakiraan untuk ${fullDate(day)}$at belum tersedia. '
             'Menurut data ${w.years} tahun terakhir, ${w.description.toLowerCase()}, '
             'suhu ${w.range} celsius');
       case Basis.observed:
         sentences.add(
             'Cuaca $when$at: ${w.description.toLowerCase()}, suhu ${w.range} celsius');
       case Basis.forecast:
-        final now = w.nowC;
-        sentences.add(offset == 0 && now != null
-            ? 'Saat ini$at ${now.round()} derajat. Hari ini ${w.description.toLowerCase()}, suhu ${w.range} celsius'
+        final current = w.nowC;
+        sentences.add(offset == 0 && current != null
+            ? 'Saat ini$at ${current.round()} derajat. Hari ini ${w.description.toLowerCase()}, suhu ${w.range} celsius'
             : 'Cuaca $when$at: ${w.description.toLowerCase()}, suhu ${w.range} celsius');
     }
     if (w.rain != null) sentences.add(w.rain!);
 
+    final now = w.nowC;
+    final temp = offset == 0 && now != null
+        ? now.round()
+        : ((w.minC + w.maxC) / 2).round();
+
     return Answer(
       spoken: '${sentences.join('. ')}.',
       headline: w.description,
-      detail: [
-        if (w.nowC != null && offset == 0) '${w.nowC!.round()}° sekarang',
-        w.rangeShort,
-        if (area != null) area,
-        if (w.rain != null) w.rain!,
-      ].join('\n'),
+      visual: Visual.weather,
+      weather: WeatherCard(
+        place: area ?? 'Lokasi Anda',
+        when: rel ?? fullDate(day),
+        temp: temp,
+        description: w.description,
+        glyph: w.glyph,
+        high: w.maxC.round(),
+        low: w.minC.round(),
+        humidity: w.humidity,
+        windKmh: w.windKmh,
+        rainPct: w.rainPct,
+        note: w.basis == Basis.typical
+            ? 'Rata-rata ${w.years} tahun terakhir'
+            : null,
+      ),
     );
   }
 
