@@ -9,22 +9,22 @@ void main() {
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    systemNavigationBarColor: Palette.paper,
-    systemNavigationBarIconBrightness: Brightness.dark,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarColor: Palette.ground,
+    systemNavigationBarIconBrightness: Brightness.light,
   ));
-  runApp(const TuturApp());
+  runApp(const NoberuApp());
 }
 
-class TuturApp extends StatelessWidget {
-  const TuturApp({super.key});
+class NoberuApp extends StatelessWidget {
+  const NoberuApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tutur',
+      title: 'Noberu',
       debugShowCheckedModeBanner: false,
-      theme: tuturTheme(),
+      theme: noberuTheme(),
       home: const HomePage(),
     );
   }
