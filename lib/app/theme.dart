@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Kontras: tinta di atas kertas 15:1, kertas di atas terakota 5,7:1.
+/// Kontras di atas [ground]: ink 15:1, signal 13:1, alert 8:1.
 class Palette {
-  static const paper = Color(0xFFF5F0E6);
-  static const ink = Color(0xFF1C1A16);
-  static const clay = Color(0xFFA8381A);
-  static const inkSoft = Color(0xFF4A453C);
+  static const ground = Color(0xFF16150F);
+  static const ink = Color(0xFFF4EFE0);
+  static const inkSoft = Color(0xFFB9B2A0);
+  static const signal = Color(0xFFFFD100);
+  static const signalDeep = Color(0xFF6B5300);
+  static const alert = Color(0xFFFF7A59);
 }
 
 const _serif = TextStyle(
@@ -13,19 +15,19 @@ const _serif = TextStyle(
   fontFamilyFallback: ['Noto Serif', 'Georgia', 'Times New Roman'],
 );
 
-class TuturType {
+class NoberuType {
   static final wordmark = _serif.copyWith(fontSize: 26, fontWeight: FontWeight.w700);
   static final headline = _serif.copyWith(fontSize: 52, height: 1.05, fontWeight: FontWeight.w600);
   static const detail = TextStyle(fontSize: 22, height: 1.4, fontWeight: FontWeight.w500);
   static const heard = TextStyle(fontSize: 18, height: 1.35, fontStyle: FontStyle.italic);
-  static const label = TextStyle(fontSize: 14, letterSpacing: 1.6, fontWeight: FontWeight.w700);
 }
 
-ThemeData tuturTheme() => ThemeData(
+ThemeData noberuTheme() => ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: Palette.clay,
-        surface: Palette.paper,
+        seedColor: Palette.signal,
+        brightness: Brightness.dark,
+        surface: Palette.ground,
       ),
-      scaffoldBackgroundColor: Palette.paper,
+      scaffoldBackgroundColor: Palette.ground,
     );
