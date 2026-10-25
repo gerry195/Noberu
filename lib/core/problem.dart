@@ -25,15 +25,15 @@ class ProblemException implements Exception {
 
 extension ProblemText on Problem {
   String get message => switch (this) {
-        Problem.micDenied => 'Mikrofon tidak bisa dipakai',
-        Problem.noSpeech => 'Saya tidak mendengar suara',
-        Problem.notUnderstood => 'Saya belum mengerti perintahnya',
-        Problem.gpsOff => 'Lokasi belum aktif',
-        Problem.gpsDenied => 'Izin lokasi ditolak',
-        Problem.noInternet => 'Tidak ada sambungan internet',
-        Problem.placeNotFound => 'Tempat itu tidak ketemu',
-        Problem.serviceFailed => 'Data belum bisa diambil',
-        Problem.ttsFailed => 'Suara gagal diputar',
+        Problem.micDenied => 'Maaf, mikrofon belum bisa dipakai',
+        Problem.noSpeech => 'Maaf, aku tidak mendengar suara',
+        Problem.notUnderstood => 'Maaf, aku belum mengerti perintahnya',
+        Problem.gpsOff => 'Maaf, lokasi belum aktif',
+        Problem.gpsDenied => 'Maaf, izin lokasi ditolak',
+        Problem.noInternet => 'Maaf, tidak ada internet',
+        Problem.placeNotFound => 'Maaf, tempat itu tidak ketemu',
+        Problem.serviceFailed => 'Maaf, data belum bisa diambil',
+        Problem.ttsFailed => 'Maaf, suara gagal diputar',
       };
 
   String get hint => switch (this) {

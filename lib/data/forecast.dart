@@ -1,31 +1,39 @@
 import '../core/problem.dart';
 import 'net.dart';
+import 'weather_glyph.dart';
 
 enum Basis { forecast, observed, typical }
 
 class DayWeather {
   const DayWeather({
     required this.description,
+    required this.glyph,
     required this.minC,
     required this.maxC,
     required this.basis,
     this.nowC,
     this.rain,
+    this.rainPct,
+    this.humidity,
+    this.windKmh,
     this.years,
   });
 
   final String description;
+  final WeatherGlyph glyph;
   final double minC;
   final double maxC;
   final Basis basis;
   final double? nowC;
   final String? rain;
+  final int? rainPct;
+  final int? humidity;
+  final int? windKmh;
 
   /// Jumlah tahun arsip yang dipakai untuk [Basis.typical].
   final int? years;
 
   String get range => '${minC.round()} sampai ${maxC.round()} derajat';
-  String get rangeShort => '${minC.round()}–${maxC.round()}°';
 }
 
 /// Open-Meteo: gratis dan tanpa kunci API.
@@ -47,24 +55,39 @@ class ForecastClient {
 
   Future<DayWeather> _daily(double lat, double lon, DateTime day, int offset) async {
     final archive = offset < -_forecastPastDays;
-    final params = {
-      'latitude': '$lat',
-      'longitude': '$lon',
-      'daily': archive
-          ? 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum'
-          : 'weather_code,temperature_2m_max,temperature_2m_min,'
-              'precipitation_probability_max,precipitation_sum',
-      'timezone': 'auto',
-      'start_date': _ymd(day),
-      'end_date': _ymd(day),
-      if (offset == 0) 'current': 'temperature_2m',
-    };
-    final uri = Uri.https(
-      archive ? 'archive-api.open-meteo.com' : 'api.open-meteo.com',
-      archive ? '/v1/archive' : '/v1/forecast',
-      params,
-    );
-    final data = await getJson(uri);
+
+    Future<Object?> run(bool extras) {
+      final rainVars = archive
+          ? 'precipitation_sum'
+          : 'precipitation_probability_max,precipitation_sum';
+      final more = extras ? ',relative_humidity_2m_mean,wind_speed_10m_max' : '';
+      final uri = Uri.https(
+        archive ? 'archive-api.open-meteo.com' : 'api.open-meteo.com',
+        archive ? '/v1/archive' : '/v1/forecast',
+        {
+          'latitude': '$lat',
+          'longitude': '$lon',
+          'daily': 'weather_code,temperature_2m_max,temperature_2m_min,$rainVars$more',
+          'timezone': 'auto',
+          'start_date': _ymd(day),
+          'end_date': _ymd(day),
+          if (offset == 0)
+            'current': extras
+                ? 'temperature_2m,relative_humidity_2m,wind_speed_10m'
+                : 'temperature_2m',
+        },
+      );
+      return getJson(uri);
+    }
+
+    // Bila variabel tambahan ditolak server, ulangi dengan variabel dasar.
+    Object? data;
+    try {
+      data = await run(true);
+    } on ProblemException {
+      data = await run(false);
+    }
+
     final daily = data is Map ? data['daily'] : null;
     if (daily is! Map) throw const ProblemException(Problem.serviceFailed);
 
@@ -92,17 +115,23 @@ class ForecastClient {
     }
 
     final current = data is Map ? data['current'] : null;
-    final nowC = current is Map && current['temperature_2m'] is num
-        ? (current['temperature_2m'] as num).toDouble()
-        : null;
+    num? now(String key) =>
+        current is Map && current[key] is num ? current[key] as num : null;
+
+    final humidity = now('relative_humidity_2m') ?? first('relative_humidity_2m_mean');
+    final wind = now('wind_speed_10m') ?? first('wind_speed_10m_max');
 
     return DayWeather(
       description: _describe(code.toInt()),
+      glyph: _glyph(code.toInt()),
       minC: lo.toDouble(),
       maxC: hi.toDouble(),
       basis: offset < 0 ? Basis.observed : Basis.forecast,
-      nowC: nowC,
+      nowC: now('temperature_2m')?.toDouble(),
       rain: rain,
+      rainPct: prob?.round(),
+      humidity: humidity?.round(),
+      windKmh: wind?.round(),
     );
   }
 
@@ -161,15 +190,40 @@ class ForecastClient {
             : wetShare >= 30
                 ? 'Kadang hujan'
                 : 'Biasanya kering';
+    final glyph = wetShare == null
+        ? WeatherGlyph.cloudy
+        : wetShare >= 60
+            ? WeatherGlyph.rain
+            : wetShare >= 30
+                ? WeatherGlyph.partly
+                : WeatherGlyph.clear;
 
     return DayWeather(
       description: description,
+      glyph: glyph,
       minC: lo,
       maxC: hi,
       basis: Basis.typical,
       rain: wetShare == null ? null : 'hujan turun sekitar $wetShare persen harinya',
+      rainPct: wetShare,
       years: perYear.where((e) => e.isNotEmpty).length,
     );
+  }
+
+  WeatherGlyph _glyph(int code) {
+    if (code == 0) return WeatherGlyph.clear;
+    if (code == 1 || code == 2) return WeatherGlyph.partly;
+    if (code == 3) return WeatherGlyph.cloudy;
+    if (code >= 45 && code <= 48) return WeatherGlyph.fog;
+    if (code >= 51 && code <= 57) return WeatherGlyph.drizzle;
+    if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) {
+      return WeatherGlyph.rain;
+    }
+    if ((code >= 71 && code <= 77) || code == 85 || code == 86) {
+      return WeatherGlyph.snow;
+    }
+    if (code >= 95) return WeatherGlyph.storm;
+    return WeatherGlyph.cloudy;
   }
 
   String _describe(int code) {

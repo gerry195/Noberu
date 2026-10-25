@@ -5,7 +5,7 @@ Asisten suara berbahasa Indonesia untuk tunanetra. Nama dari 述べる (noberu),
 ## Cara pakai
 
 - **Tahan layar** di mana saja. Ponsel bergetar dan berbunyi bip, lalu bicara.
-- Pita gelombang kuning keselamatan mengikuti volume suara Anda saat merekam. Saat siap ia menjadi garis redup, saat mencari ia bergulir pelan.
+- Pita gelombang cokelat-krem mengikuti volume suara Anda saat merekam, dan bergulir pelan saat mencari. Lingkaran mikrofon di tengah layar hanya penanda; sentuhan di mana saja tetap berfungsi.
 - **Lepas jari** untuk mengirim. Getar pendek dan bip rendah menandai rekaman selesai.
 - **Ketuk dua kali cepat** untuk mengulang jawaban terakhir.
 - **Ketuk sekali** untuk mendengar petunjuk singkat.
@@ -31,14 +31,14 @@ Perangkat perlu Google Text-to-Speech dengan paket bahasa Indonesia, layanan sua
 
 ## Sumber data
 
-Semua gratis dan tanpa kunci API: Open-Meteo (prakiraan, arsip, geocoding cadangan), OpenStreetMap Nominatim (alamat dan pencarian tempat), dan GPS perangkat. Tanggal lebih dari 15 hari ke depan dijawab dengan rata-rata lima tahun terakhir.
+Layar jawaban memakai ilustrasi garis yang digambar dari kode (`flutter_svg`). Semua data gratis dan tanpa kunci API: Open-Meteo (prakiraan, arsip, geocoding cadangan), OpenStreetMap Nominatim (alamat dan pencarian tempat), dan GPS perangkat. Tanggal lebih dari 15 hari ke depan dijawab dengan rata-rata lima tahun terakhir.
 
 ## Struktur
 
 ```
 lib/
   main.dart
-  app/        tema gelap, layar utama, pita gelombang (wave_ribbon.dart)
+  app/        tema putih-cokelat, splash, layar utama, pita gelombang, ikon garis
   core/       jenis masalah, getar dan bip
   voice/      pengenalan suara (Ears), pembacaan suara (Speaker)
   intent/     pengurai kalimat menjadi perintah
